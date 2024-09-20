@@ -1,0 +1,37 @@
+---FORMAT---
+
+    ---NOTES---
+        Tab for sub notes, tab for those notes
+        NO for bullet points 
+        First letter capitalzied (exceptions of commands and case sensitive things)
+
+    ---FILES---
+    all lowercase
+    ---FOLDERS---
+    First letter captialized
+
+---FORMAT---
+
+---QEMU---
+
+boot:
+compile:
+
+
+nasm -f elf32 -o example.o example.asm
+ld -m elf_i386 -o example example.o
+
+emulate:
+qemu-i386 ./example
+
+qemu-system-x86_64 -drive file=.img,format=qcow2 -m 1024 -enable-kvm
+To create a virtual hard disk image:
+qemu-img create -f qcow2 my_custom_disk.img 10G
+
+---QEMU
+
+---BOOTLOADER---
+
+
+---BOOTLOADER---
+
