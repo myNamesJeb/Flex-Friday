@@ -1,0 +1,21 @@
+History Of Project:
+
+Tried to build a bootloader as well as a kernel/os, failed terribly
+Went down to just building a kernel
+started with "hello world"
+continued with writing to screen, incl. kb driver
+kb driver sucks, is polling based, and has issues with double typing, on TODO list to make better
+next step is getting shell env. done, little to no issues, was pretty easy
+then in memory file system & memory management , was a pain in the ass, but got it done'
+Clock is next step in making this operable. CMOS reading was okay, just needed to RTFM
+current issue: printing variables. issue because: how would you do it? 
+
+
+--TODO--
+some sort of PATH, proper malloc() function, and  
+disk writing
+Fix KB driver
+fix odd issues with current command code. maybe make it object/class based? possible warrants C++ or other higher level lang (sub todo would be compile to BIN c++)
+Most commands have major faults
+
+
