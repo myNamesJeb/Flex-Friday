@@ -1,4 +1,5 @@
 #include "string.h"
+#include <stddef.h> // Add this line
 
 int strcmp(const char *s1, const char *s2) {
     while (*s1 && *s1 == *s2) {
@@ -49,4 +50,12 @@ char *strncat(char *dest, const char *src, int n) {
     }
     dest[dest_len + i] = '\0';
     return dest;
+}
+
+void *memset(void *s, int c, size_t n) {
+    unsigned char *p = s;
+    while (n--) {
+        *p++ = (unsigned char)c;
+    }
+    return s;
 }

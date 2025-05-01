@@ -12,22 +12,10 @@ bits 32
 [section .text]
 global _start
 extern kmain
-extern gdt_ptr        ; from gdt.asm
 
 _start:
-    ; Load the GDT
-    lgdt [gdt_ptr]
-    ; Far jump: 0x08 is the selector for our code segment in the new GDT
-    jmp 0x08:protected_mode_entry
-
-protected_mode_entry:
-    ; Set up segment registers with the data segment selector (0x10)
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
+    ; Setup a basic stack
+    mov esp, stack_top
 
     ; Call the C kernel entry point
     call kmain
@@ -36,3 +24,9 @@ halt:
     cli
     hlt
     jmp halt
+
+[section .bss]
+align 4
+stack_bottom:
+    resb 16384 ; 16 KB for stack
+stack_top:

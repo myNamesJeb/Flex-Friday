@@ -19,11 +19,14 @@ CRT0_OBJ    = $(BUILD_DIR)/crt0.o
 IDT_FLUSH_OBJ = $(BUILD_DIR)/idt_flush.o
 KEYBOARD_ASM_OBJ = $(BUILD_DIR)/keyboard_stub.o
 TIMER_ASM_OBJ = $(BUILD_DIR)/timer.o
-GDT_OBJ = $(BUILD_DIR)/gdt.o
+GDT_ASM_OBJ = $(BUILD_DIR)/gdt_asm.o
+GDT_C_OBJ = $(BUILD_DIR)/gdt.o
+IDT_OBJ = $(BUILD_DIR)/idt.o
+PAGING_OBJ = $(BUILD_DIR)/paging.o
 
 # Automatically locate all C source files in SRC_DIR and convert to .o object file names
 C_SOURCES   := $(wildcard $(SRC_DIR)/*.c)
-OBJECTS     := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(C_SOURCES))
+OBJECTS     := $(filter-out $(BUILD_DIR)/gdt.o,$(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(C_SOURCES)))
 
 KERNEL_BIN  = $(BUILD_DIR)/kernel.bin
 ISO_DIR     = iso
@@ -49,14 +52,23 @@ $(KEYBOARD_ASM_OBJ): $(SRC_DIR)/keyboard.asm | $(BUILD_DIR)
 $(TIMER_ASM_OBJ): $(SRC_DIR)/timer.asm | $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) $< -o $@
 
-$(GDT_OBJ): $(SRC_DIR)/gdt.asm | $(BUILD_DIR)
+$(GDT_ASM_OBJ): $(SRC_DIR)/gdt.asm | $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) $< -o $@
+
+$(GDT_C_OBJ): $(SRC_DIR)/gdt.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(IDT_OBJ): $(SRC_DIR)/idt.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(PAGING_OBJ): $(SRC_DIR)/paging.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(KERNEL_BIN): $(CRT0_OBJ) $(OBJECTS) $(GDT_OBJ) $(IDT_FLUSH_OBJ) $(KEYBOARD_ASM_OBJ) $(TIMER_ASM_OBJ) linker.ld
-	$(LD) -m elf_i386 -T linker.ld -o $(KERNEL_BIN) $(CRT0_OBJ) $(OBJECTS) $(GDT_OBJ) $(IDT_FLUSH_OBJ) $(KEYBOARD_ASM_OBJ) $(TIMER_ASM_OBJ)
+$(KERNEL_BIN): $(CRT0_OBJ) $(OBJECTS) $(GDT_ASM_OBJ) $(GDT_C_OBJ) $(IDT_FLUSH_OBJ) $(KEYBOARD_ASM_OBJ) $(TIMER_ASM_OBJ) linker.ld
+	$(LD) -m elf_i386 -T linker.ld -o $(KERNEL_BIN) $(CRT0_OBJ) $(OBJECTS) $(GDT_ASM_OBJ) $(GDT_C_OBJ) $(IDT_FLUSH_OBJ) $(KEYBOARD_ASM_OBJ) $(TIMER_ASM_OBJ)
 
 prepare_iso: $(KERNEL_BIN)
 	@echo "Setting up ISO structure..."

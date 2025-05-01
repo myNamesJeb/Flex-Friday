@@ -2,7 +2,10 @@
 #include "malloc.h"
 #include "stdio.h"
 #include "stddef.h"
-extern void idt_init();
+#include "gdt.h"  // Include for gdt_install
+#include "idt.h"  // Include for idt_install
+#include "string.h" // Include for memset
+
 extern void shell_run();
 
 // Function to get the value of DS using inline assembly
@@ -13,7 +16,8 @@ unsigned short get_ds(void) {
 }
 
 int kmain(void) {
-    idt_init();
+    gdt_install(); // Call GDT installation
+    idt_install(); // Changed from idt_init to match implementation
     __asm__("sti");  // enable interrupts
 
     unsigned short ds_val = get_ds();

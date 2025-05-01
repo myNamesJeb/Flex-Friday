@@ -16,7 +16,8 @@ struct idt_ptr {
     uint32_t base;
 } __attribute__((packed));
 
-void idt_init(void);
+void idt_install(void);  // Changed from idt_init
 void idt_flush(uint32_t);
+extern void idt_load(uint32_t);
 
 #endif
