@@ -20,6 +20,15 @@ static void update_cursor() {
 }
 
 static void putc(char c) {
+    if (c == '\b') {
+        if (cursor_pos > 0) {
+            cursor_pos--;
+            VIDEO_MEMORY[cursor_pos * 2] = ' ';
+            VIDEO_MEMORY[cursor_pos * 2 + 1] = 0x07;
+            update_cursor();
+        }
+        return;
+    }
     if (c == '\n') {
         int col = cursor_pos % SCREEN_WIDTH;
         cursor_pos += (SCREEN_WIDTH - col);
