@@ -31,6 +31,9 @@ int fs_create_dir(const char *path);
 void fs_ls(const char *path);
 void fs_cat(const char *path);
 int fs_write(const char *path, const char *content);
+int fs_read(const char *path, char *buffer, int max_size);
+int fs_rm(const char *path);
+int fs_mv(const char *src, const char *dst);
 
 // Utilities for path resolution and printing the path
 FSNode* fs_resolve(FSNode *start, const char *path);

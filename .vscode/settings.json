@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "clock.h": "c",
-        "gdt.h": "c"
+        "gdt.h": "c",
+        "cstdlib": "cpp"
     }
 }

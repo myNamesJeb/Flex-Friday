@@ -12,10 +12,12 @@ current issue: printing variables. issue because: how would you do it?
 
 
 --TODO--
-some sort of PATH, proper malloc() function, and  
+some sort of PATH, and  
 disk writing
-Fix KB driver
 fix odd issues with current command code. maybe make it object/class based? possible warrants C++ or other higher level lang (sub todo would be compile to BIN c++)
 Most commands have major faults
 
-
+16, may, 2025
+made things look good, last friday and the friday before i fixed the kb driver, a screen issue, and took a bunch of items off of todo
+may need to make a way to install to the disk, so its not just a "live usb" type os
+took malloc() off of todo

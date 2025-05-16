@@ -28,15 +28,10 @@ void fs_init() {
     fs_create_dir("/boot");
     fs_create_dir("/etc");
     fs_create_dir("/home");
-    fs_create_dir("/cmd");  // <-- create a dedicated commands directory
 
     // Preload a sample file in /boot (your kernel, etc.)
     fs_create_file("/boot/kernel.bin");
     fs_write("/boot/kernel.bin", "This is the OS code (simulated).");
-
-    // For example, install a dummy command into /cmd:
-    fs_create_file("/cmd/hello.txt");
-    fs_write("/cmd/hello.txt", "Hello from /cmd!");
 }
 
 // Find a node given an absolute path (starting with '/').
@@ -193,3 +188,47 @@ int fs_write(const char *path, const char *content) {
     node->size = strlen(node->data);
     return 0;
 }
+
+int fs_read(const char *path, char *buffer, int max_size) {
+    FSNode* node = fs_find(path);
+    if (!node || node->type != FS_NODE_FILE)
+        return -1;
+    int to_copy = node->size < max_size ? node->size : max_size - 1;
+    strncpy(buffer, node->data, to_copy);
+    buffer[to_copy] = '\0';
+    return to_copy;
+}
+
+int fs_rm(const char *path) {
+    FSNode *node = fs_find(path);
+    if (!node || node == fs_root) return -1;
+    // Remove node from parent's children
+    // (Assume you have a parent pointer and a children list)
+    // ...implement removal logic...
+    return 0;
+}
+
+int fs_mv(const char *src, const char *dst) {
+    FSNode *node = fs_find(src);
+    if (!node) return -1;
+    // Remove from old parent, add to new parent with new name
+    // ...implement move/rename logic...
+    return 0;
+}
+
+// void fs_get_path(FSNode *node, char *buffer, int max_size) {
+//     if (!node || !buffer) return;
+//     char temp[MAX_NAME_LEN];
+//     int len = 0;
+//     while (node) {
+//         snprintf(temp, sizeof(temp), "/%s", node->name);
+//         int temp_len = strlen(temp);
+//         if (len + temp_len < max_size) {
+//             memmove(buffer + temp_len, buffer, len);
+//             memcpy(buffer, temp, temp_len);
+//             len += temp_len;
+//         }
+//         node = node->parent;
+//     }
+//     buffer[len] = '\0';
+// }

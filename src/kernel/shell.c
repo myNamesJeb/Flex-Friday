@@ -1,11 +1,11 @@
 /* src/shell.c */
-#include "stdio.h"
+#include "lib/stdio.h"
 #include "fs/fs.h"
 #include "drivers/keyboard.h"
-#include "string.h"
+#include "lib/string.h"
 #include "kernel/editor.h"
 #include "drivers/clock.h"
-#include "stddef.h"
+#include "lib/stddef.h"
 
 // Add prototype for load_and_execute:
 extern void load_and_execute(const char *path);
@@ -84,24 +84,74 @@ void shell_run() {
             if (home) cwd = home; 
             else cwd = fs_root;
         }
-        else if (strcmp(cmd, "ls") == 0) {
-            // No argument => list the current directory
-            char path[128];
-            fs_get_path(cwd, path, sizeof(path));
-            fs_ls(path);
-        }
-        else if (strncmp(cmd, "ls ", 3) == 0) {
-            // "ls <dir>" => parse <dir>, then resolve relative to cwd
-            char *dir = cmd + 3;
-            FSNode *target = fs_resolve(cwd, dir);
-            if (!target) {
-                printf("No such directory: %s\n", dir);
-            } else if (target->type != FS_NODE_DIR) {
-                printf("%s is not a directory\n", dir);
+        else if (strncmp(cmd, "ls", 2) == 0) {
+            char *dir = cmd + 2;
+            while (*dir == ' ') dir++;
+            if (*dir == '\0') {
+                char path[128];
+                fs_get_path(cwd, path, sizeof(path));
+                fs_ls(path);
             } else {
-                char full_path[128];
-                fs_get_path(target, full_path, sizeof(full_path));
-                fs_ls(full_path);
+                FSNode *target = fs_resolve(cwd, dir);
+                if (!target) {
+                    printf("No such directory: %s\n", dir);
+                } else if (target->type != FS_NODE_DIR) {
+                    printf("%s is not a directory\n", dir);
+                } else {
+                    char full_path[128];
+                    fs_get_path(target, full_path, sizeof(full_path));
+                    fs_ls(full_path);
+                }
+            }
+        }
+        else if (strncmp(cmd, "mkdir ", 6) == 0) {
+            char *dir = cmd + 6;
+            if (fs_create_dir(dir) == 0)
+                printf("Directory created: %s\n", dir);
+            else
+                printf("Error: Could not create directory %s\n", dir);
+        }
+        else if (strncmp(cmd, "cd ", 3) == 0) {
+            char *arg = cmd + 3;
+            FSNode *target = fs_resolve(cwd, arg);
+            if (!target) {
+                printf("No such directory: %s\n", arg);
+            } else if (target->type != FS_NODE_DIR) {
+                printf("%s is not a directory\n", arg);
+            } else {
+                cwd = target;
+            }
+        }
+        else if (strcmp(cmd, "cd") == 0) {
+            FSNode *home = fs_find("/home");
+            if (home) cwd = home; 
+            else cwd = fs_root;
+        }
+        else if (strncmp(cmd, "rm ", 3) == 0) {
+            char *file = cmd + 3;
+            if (fs_rm(file) == 0)
+                printf("Removed: %s\n", file);
+            else
+                printf("Error: Could not remove %s\n", file);
+        }
+        else if (strncmp(cmd, "mv ", 3) == 0) {
+            char *args = cmd + 3;
+            char *src = strtok(args, " ");
+            char *dst = strtok(NULL, " ");
+            if (!src || !dst) {
+                printf("Usage: mv <src> <dst>\n");
+            } else if (fs_mv(src, dst) == 0) {
+                printf("Moved %s to %s\n", src, dst);
+            } else {
+                printf("Error: Could not move %s to %s\n", src, dst);
+            }
+        }
+        else if (strcmp(cmd, "makefile") == 0) {
+            if (fs_create_file("/home/Makefile") == 0) {
+                fs_write("/home/Makefile", "all:\n\tgcc main.c -o main\n");
+                printf("Created /home/Makefile\n");
+            } else {
+                printf("Could not create Makefile\n");
             }
         }
         else if (strncmp(cmd, "cat ", 4) == 0) {
@@ -140,14 +190,53 @@ void shell_run() {
         else if (strcmp(cmd, "") == 0) {
             // Do nothing on empty input
         }
+        else if (strncmp(cmd, "hexwrite ", 9) == 0) {
+            // Usage: hexwrite <file> <hex-bytes>
+            char *args = cmd + 9;
+            // Find first space (file name ends)
+            char *space = strchr(args, ' ');
+            if (!space) {
+                printf("Usage: hexwrite <file> <hex-bytes>\n");
+            } else {
+                *space = '\0';
+                char *file = args;
+                char *hexstr = space + 1;
+                // Parse hex string into bytes
+                int hexlen = strlen(hexstr) / 2;
+                char buf[256];
+                int i;
+                for (i = 0; i < hexlen && i < (int)sizeof(buf); i++) {
+                    unsigned int byte;
+                    if (sscanf(hexstr + 2*i, "%2x", &byte) != 1) {
+                        printf("Invalid hex at position %d\n", 2*i);
+                        break;
+                    }
+                    buf[i] = (char)byte;
+                }
+                if (i > 0) {
+                    if (fs_write(file, buf) == 0)
+                        printf("Wrote %d bytes to %s\n", i, file);
+                    else
+                        printf("Error: Could not write to %s\n", file);
+                }
+            }
+        }
+        else if (strncmp(cmd, "exec ", 5) == 0) {
+            char *file = cmd + 5;
+            char resolved[128];
+            if (file[0] != '/') {
+                fs_get_path(cwd, resolved, sizeof(resolved));
+                if (strcmp(resolved, "/") != 0) {
+                    strncat(resolved, "/", sizeof(resolved) - strlen(resolved) - 1);
+                }
+                strncat(resolved, file, sizeof(resolved) - strlen(resolved) - 1);
+                load_and_execute(resolved);
+            } else {
+                load_and_execute(file);
+            }
+        }
         else {
-            // Attempt to load a command from /cmd/<command>
-            char full_path[128];
-            strcpy(full_path, "/cmd/");
-            strncat(full_path, cmd, sizeof(full_path) - strlen(full_path) - 1);
-            // Assume load_and_execute() is implemented (see loader.c example)
-            printf("Attempting to execute %s...\n", full_path);
-            load_and_execute(full_path);
+            printf("Unknown command: %s\n", cmd);
         }
     }
 }

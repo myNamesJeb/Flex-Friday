@@ -59,3 +59,38 @@ void *memset(void *s, int c, size_t n) {
     }
     return s;
 }
+
+// Minimal strchr implementation
+char *strchr(const char *s, int c) {
+    while (*s) {
+        if (*s == (char)c)
+            return (char *)s;
+        s++;
+    }
+    return NULL;
+}
+
+// Minimal strtok implementation (not thread-safe, but fine for your shell)
+char *strtok(char *str, const char *delim) {
+    static char *next;
+    if (str)
+        next = str;
+    if (!next)
+        return NULL;
+    // Skip leading delimiters
+    while (*next && strchr(delim, *next))
+        next++;
+    if (!*next)
+        return NULL;
+    char *start = next;
+    // Find end of token
+    while (*next && !strchr(delim, *next))
+        next++;
+    if (*next) {
+        *next = '\0';
+        next++;
+    } else {
+        next = NULL;
+    }
+    return start;
+}

@@ -126,3 +126,24 @@ void printf(const char *format, ...) {
     
     va_end(args);
 }
+
+// Minimal sscanf for "%2x"
+int my_sscanf(const char *str, const char *fmt, unsigned int *out) {
+    if (fmt[0] == '%' && fmt[1] == '2' && fmt[2] == 'x') {
+        unsigned int val = 0;
+        for (int i = 0; i < 2; i++) {
+            char c = str[i];
+            if (c >= '0' && c <= '9')
+                val = (val << 4) | (c - '0');
+            else if (c >= 'a' && c <= 'f')
+                val = (val << 4) | (c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F')
+                val = (val << 4) | (c - 'A' + 10);
+            else
+                return 0;
+        }
+        *out = val;
+        return 1;
+    }
+    return 0;
+}
