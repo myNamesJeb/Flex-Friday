@@ -19,6 +19,25 @@ static void update_cursor() {
     outb(0x3D5, pos & 0xFF);
 }
 
+static void scroll_screen() {
+    // Move all lines up by one
+    for (int row = 1; row < SCREEN_HEIGHT; row++) {
+        for (int col = 0; col < SCREEN_WIDTH; col++) {
+            int from = (row * SCREEN_WIDTH + col) * 2;
+            int to = ((row - 1) * SCREEN_WIDTH + col) * 2;
+            VIDEO_MEMORY[to] = VIDEO_MEMORY[from];
+            VIDEO_MEMORY[to + 1] = VIDEO_MEMORY[from + 1];
+        }
+    }
+    // Clear the last line
+    for (int col = 0; col < SCREEN_WIDTH; col++) {
+        int idx = ((SCREEN_HEIGHT - 1) * SCREEN_WIDTH + col) * 2;
+        VIDEO_MEMORY[idx] = ' ';
+        VIDEO_MEMORY[idx + 1] = 0x07;
+    }
+}
+
+// Update putc to scroll when needed
 static void putc(char c) {
     if (c == '\b') {
         if (cursor_pos > 0) {
@@ -36,6 +55,11 @@ static void putc(char c) {
         VIDEO_MEMORY[cursor_pos * 2] = c;
         VIDEO_MEMORY[cursor_pos * 2 + 1] = 0x07;  // light grey on black
         cursor_pos++;
+    }
+    // Scroll if cursor is beyond the last line
+    if (cursor_pos >= SCREEN_WIDTH * SCREEN_HEIGHT) {
+        scroll_screen();
+        cursor_pos -= SCREEN_WIDTH;
     }
     update_cursor();
 }
