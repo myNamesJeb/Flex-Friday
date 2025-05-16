@@ -5,6 +5,7 @@
 #include "gdt.h"  // Include for gdt_install
 #include "idt.h"  // Include for idt_install
 #include "string.h" // Include for memset
+#include "disk_fs.h"
 
 extern void shell_run();
 
@@ -19,6 +20,7 @@ int kmain(void) {
     gdt_install(); // Call GDT installation
     idt_install(); // Changed from idt_init to match implementation
     __asm__("sti");  // enable interrupts
+    disk_fs_init();
 
     unsigned short ds_val = get_ds();
     printf("DS register: 0x%x\n", ds_val);
