@@ -84,26 +84,26 @@ void shell_run() {
             if (home) cwd = home; 
             else cwd = fs_root;
         }
-        else if (strncmp(cmd, "ls", 2) == 0) {
-            char *dir = cmd + 2;
-            while (*dir == ' ') dir++;
-            if (*dir == '\0') {
-                char path[128];
-                fs_get_path(cwd, path, sizeof(path));
-                fs_ls(path);
-            } else {
-                FSNode *target = fs_resolve(cwd, dir);
-                if (!target) {
-                    printf("No such directory: %s\n", dir);
-                } else if (target->type != FS_NODE_DIR) {
-                    printf("%s is not a directory\n", dir);
-                } else {
-                    char full_path[128];
-                    fs_get_path(target, full_path, sizeof(full_path));
-                    fs_ls(full_path);
-                }
-            }
-        }
+        // else if (strncmp(cmd, "ls", 2) == 0) {
+        //     char *dir = cmd + 2;
+        //     while (*dir == ' ') dir++;
+        //     if (*dir == '\0') {
+        //         char path[128];
+        //         fs_get_path(cwd, path, sizeof(path));
+        //         fs_ls(path);
+        //     } else {
+        //         FSNode *target = fs_resolve(cwd, dir);
+        //         if (!target) {
+        //             printf("No such directory: %s\n", dir);
+        //         } else if (target->type != FS_NODE_DIR) {
+        //             printf("%s is not a directory\n", dir);
+        //         } else {
+        //             char full_path[128];
+        //             fs_get_path(target, full_path, sizeof(full_path));
+        //             fs_ls(full_path);
+        //         }
+        //     }
+        // }
         else if (strncmp(cmd, "mkdir ", 6) == 0) {
             char *dir = cmd + 6;
             if (fs_create_dir(dir) == 0)
@@ -236,7 +236,11 @@ void shell_run() {
             }
         }
         else {
-            printf("Unknown command: %s\n", cmd);
+            // Try to execute /bin/<cmd>
+            char exec_path[128];
+            strcpy(exec_path, "/bin/");
+            strncat(exec_path, cmd, sizeof(exec_path) - strlen(exec_path) - 1);
+            load_and_execute(exec_path);
         }
     }
 }

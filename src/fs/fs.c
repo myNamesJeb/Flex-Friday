@@ -28,6 +28,7 @@ void fs_init() {
     fs_create_dir("/boot");
     fs_create_dir("/etc");
     fs_create_dir("/home");
+    fs_create_dir("/bin");
 
     // Preload a sample file in /boot (your kernel, etc.)
     fs_create_file("/boot/kernel.bin");

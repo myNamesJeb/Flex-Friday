@@ -16,7 +16,10 @@ BUILD_DIR   = build
 C_SOURCES   := $(shell find $(SRC_DIR) -name '*.c')
 ASM_SOURCES := $(shell find $(ARCH_DIR) -name '*.asm')
 
-OBJECTS     := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(C_SOURCES))
+C_COMMAND_SOURCES := $(wildcard $(COMMAND_SRC_DIR)/*.c)
+C_KERNEL_SOURCES := $(filter-out $(C_COMMAND_SOURCES), $(C_SOURCES))
+OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(C_KERNEL_SOURCES))
+
 ASM_OBJECTS := $(patsubst $(ARCH_DIR)/%.asm,$(BUILD_DIR)/%.o,$(ASM_SOURCES))
 
 KERNEL_BIN  = $(BUILD_DIR)/kernel.bin
@@ -24,9 +27,16 @@ ISO_DIR     = iso
 ISO         = $(BUILD_DIR)/os.iso
 DISK_IMG    = disk.img
 
-.PHONY: all clean run prepare_iso
+# List your commands here
+COMMANDS := ls mkdir touch
 
-all: $(ISO)
+# Paths
+COMMAND_SRC_DIR := src/command
+BIN_OUT_DIR := bin
+
+.PHONY: all clean run prepare_iso commands
+
+all: $(ISO) commands
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
@@ -44,7 +54,11 @@ $(BUILD_DIR)/%.o: $(ARCH_DIR)/%.asm | $(BUILD_DIR)
 $(KERNEL_BIN): $(OBJECTS) $(ASM_OBJECTS) linker.ld
 	$(LD) -m elf_i386 -T linker.ld -o $@ $(ASM_OBJECTS) $(OBJECTS)
 
-prepare_iso: $(KERNEL_BIN)
+	install_commands: commands
+	mkdir -p $(ISO_DIR)/bin
+	cp bin/* $(ISO_DIR)/bin/
+
+prepare_iso: $(KERNEL_BIN) install_commands
 	@echo "Setting up ISO structure..."
 	@mkdir -p $(ISO_DIR)/boot/grub
 	@cp $(KERNEL_BIN) $(ISO_DIR)/boot/kernel.bin
@@ -56,7 +70,17 @@ $(ISO): prepare_iso
 run: all
 	$(QEMU) -cdrom $(ISO)
 
+# Build rules for each command
+$(BIN_OUT_DIR)/%: $(COMMAND_SRC_DIR)/%.c
+	mkdir -p $(BIN_OUT_DIR)
+	$(CC) $(CFLAGS) -c $< -o $(BIN_OUT_DIR)/$*.o
+	$(LD) -m elf_i386 -T linker.ld --unresolved-symbols=ignore-all -o $@ $(BIN_OUT_DIR)/$*.o
+
+# Build all commands
+commands: $(addprefix $(BIN_OUT_DIR)/, $(COMMANDS))
+
 clean:
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(ISO_DIR)/boot
 	@rm -f $(DISK_IMG)
+	@rm -rf $(BIN_OUT_DIR)/*
